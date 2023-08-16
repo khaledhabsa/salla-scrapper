@@ -18,136 +18,58 @@ class LoginSpider(Spider):
     name = 'salla_orders_1'
     csv_file = "orders_phones.csv"
     
-    # custom_settings = {
-    #     'SCRAPEOPS_API_KEY': 'da0d3577-212c-40cc-8870-6f64ee7a3e22',
-    #     'SCRAPEOPS_FAKE_USER_AGENT_ENABLED': True,
-    #     'DOWNLOADER_MIDDLEWARES': {
-    #         'salla_scraper.middlewares.ScrapeOpsFakeUserAgentMiddleware': 400,
-    #     }
-    # }
+    # ... (other settings and variables) ...
     
     start_urls = ['https://s.salla.sa/login']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         chrome_options = Options()
-        chrome_options.add_argument('--headless')  # Set to '--headless' to run Chrome in headless mode
-        chrome_options.add_argument('--no-sandbox')  # May be required depending on your system configuration
-        #chrome_options.add_argument('--disable-dev-shm-usage')  # May be required depending on your system configuration
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
         self.driver = webdriver.Chrome(options=chrome_options)
         
     def parse(self, response):
         self.driver.get(response.url)
         time.sleep(10)
-        username_input = self.driver.find_element(By.ID, 'login-email')
-        password_input = self.driver.find_element(By.ID, 'login-password')
         
-        username_input.send_keys('eyacleanproksaa@gmail.com')
-        password_input.send_keys('Sally@Eyanew6869')
-        password_input.send_keys(Keys.RETURN)
-        
-        time.sleep(10)
-        
-        
-        
-        ######################### LOGIN DONE!!
-        ########################################## GET DATA FROM CLIENT PAGE ##############
+        # ... (login logic) ...
         
         feedback_url = 'https://s.salla.sa/orders'
-                            
         self.driver.get(feedback_url)
         time.sleep(10)
         
-
         # Read the concatenated CSV file into a DataFrame
         concatenated_df = pd.read_csv('C:/Users/HP/Desktop/orders_v30.csv', encoding='utf-8-sig')
-        
-        # Extract the "urls" column as a list
         url_list = concatenated_df['URL'].tolist()
         
-               
-        print('........... Moving To the Final second page ...........')   
+        print('........... Moving To the Final second page ...........')
         
-        phone_number = []
-        page_url = []
-        num = 0
         for url in url_list[:50000]:
             self.driver.get(url)
             time.sleep(1)
             
+            phone_number = None
+            page_url = url
             
-            print(num)
-            num +=1
-     
-            
-            # phone 
             try:
                 element = self.driver.find_element(By.CSS_SELECTOR, 'a.direct-phone') 
                 phone = element.text 
-                
                 pattern = r'\+966\d{9}'
-                # Find the phone number in the string using the regular expression pattern
                 match = re.search(pattern, phone)
                 
                 if match:
-                    # Extract the matched phone number
                     number = match.group()
-                    phone_number.append(number)
-                    
-                else:
-                    
-                    phone_number.append(None)
+                    phone_number = number
             except:
-                phone_number.append(None)
+                pass
             
-            # url
-            page_url.append(url)
-             
+            with open(self.csv_file, "a", encoding="utf-8-sig", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                if csvfile.tell() == 0:
+                    writer.writerow(["phone number", "url"])
+                writer.writerow([phone_number, page_url])
             
-        data = zip(phone_number, page_url)
-
-        
-        # Write the data to the CSV file
-        with open(self.csv_file, "a", encoding="utf-8-sig", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            if csvfile.tell() == 0:  # Check if file is empty
-            
-                writer.writerow(["phone number" ,"url"])  # Write the header row
-                
-            writer.writerows(data)  # Write the data rows
-        
-        csvfile.close()
-        print("Data saved successfully to orders_phones.csv")
+            print("Data saved for URL:", page_url)
     
-    
-            
-     
-            
         self.driver.quit()
-    
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-                
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
